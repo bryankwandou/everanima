@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { scroll-behavior: smooth; }
+body { background: #0a0a0f; color: #f5f1e8; }
+
+.grain::before {
+  content: "";
+  position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes pulseline { 0%,100% { opacity: 0.25 } 50% { opacity: 1 } }
+.cursorline { animation: pulseline 1.1s infinite; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #2a2a35; border-radius: 3px; }
