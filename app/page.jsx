@@ -11,6 +11,7 @@ import {
 } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import Logo from "./components/Logo";
+import WalletConnect from "./components/WalletConnect";
 
 const easeOut = [0.22, 1, 0.36, 1];
 const fadeUp = {
@@ -200,6 +201,7 @@ export default function Landing() {
             <a href="#pricing" className="text-haze hover:text-parchment hidden sm:block">Pricing</a>
             <a href="/demo" className="text-haze hover:text-parchment">Demo</a>
             <a href="/login" className="text-haze hover:text-parchment">Sign in</a>
+            <WalletConnect />
             <MagneticLink href="/signup"
               className="px-4 py-1.5 rounded-full bg-parchment text-ink font-semibold hover:opacity-90">
               Create account
