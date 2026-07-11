@@ -1,16 +1,24 @@
+import { sql, currentUser } from "../../../lib/server";
+
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MODEL = "llama-3.3-70b-versatile";
 
 // Batched extraction: called once every few messages, not per message,
-// to stay well inside the Groq free tier.
+// to stay well inside the Groq free tier. Persona is stored server-side.
 export async function POST(req) {
-  const { recent, persona } = await req.json();
-  if (!Array.isArray(recent) || recent.length === 0) {
-    return Response.json({ error: "recent required" }, { status: 400 });
-  }
+  const user = await currentUser();
+  if (!user) return Response.json({ error: "Sign in first." }, { status: 401 });
+
+  const recent = await sql`
+    SELECT role, content FROM messages WHERE user_id = ${user.id}
+    ORDER BY id DESC LIMIT 12`;
+  if (!recent.length) return Response.json({ error: "nothing to remember" }, { status: 400 });
+
+  const personaRows = await sql`SELECT content FROM personas WHERE user_id = ${user.id}`;
+  const persona = personaRows[0]?.content || "";
 
   const transcript = recent
-    .slice(-12)
+    .reverse()
     .map((m) => `${m.role === "user" ? "Them" : "Anima"}: ${String(m.content).slice(0, 1500)}`)
     .join("\n");
 
@@ -45,14 +53,18 @@ export async function POST(req) {
       max_tokens: 600
     })
   });
-
   if (!res.ok) {
-    const detail = await res.text();
     return Response.json(
-      { error: "groq_error", detail: detail.slice(0, 300) },
+      { error: "groq_error", detail: (await res.text()).slice(0, 300) },
       { status: 502 }
     );
   }
   const data = await res.json();
-  return Response.json({ persona: data.choices[0].message.content });
+  const next = data.choices[0].message.content;
+
+  await sql`
+    INSERT INTO personas (user_id, content, updated_at) VALUES (${user.id}, ${next}, now())
+    ON CONFLICT (user_id) DO UPDATE SET content = ${next}, updated_at = now()`;
+
+  return Response.json({ persona: next });
 }

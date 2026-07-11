@@ -63,7 +63,9 @@ export default function Landing() {
           <div className="flex items-center gap-6 text-sm">
             <a href="#how" className="text-haze hover:text-parchment">How it works</a>
             <a href="#pricing" className="text-haze hover:text-parchment">Pricing</a>
-            <a href="/chat" className="px-4 py-1.5 rounded-full bg-parchment text-ink font-semibold hover:opacity-90">Open the app</a>
+            <a href="/demo" className="text-haze hover:text-parchment">Demo</a>
+            <a href="/login" className="text-haze hover:text-parchment">Sign in</a>
+            <a href="/signup" className="px-4 py-1.5 rounded-full bg-parchment text-ink font-semibold hover:opacity-90">Create account</a>
           </div>
         </div>
       </nav>
@@ -89,11 +91,11 @@ export default function Landing() {
               Every assistant forgets you once the chat gets long. Everanima keeps a living persona file it maintains itself, anchors each version to your Solana wallet, and never loses the thread of who you are.
             </motion.p>
             <motion.div variants={fadeUp} initial="hidden" animate="show" custom={3} className="mt-8 flex gap-3">
-              <a href="/chat" className="px-6 py-3 rounded-full bg-ember text-ink font-semibold hover:scale-[1.03] transition-transform">
+              <a href="/signup" className="px-6 py-3 rounded-full bg-ember text-ink font-semibold hover:scale-[1.03] transition-transform">
                 Start talking
               </a>
-              <a href="#how" className="px-6 py-3 rounded-full border border-white/15 hover:border-white/40 transition-colors">
-                See the memory loop
+              <a href="/demo" className="px-6 py-3 rounded-full border border-white/15 hover:border-white/40 transition-colors">
+                Try the demo first
               </a>
             </motion.div>
           </div>
@@ -165,9 +167,10 @@ export default function Landing() {
               <h3 className="font-semibold text-lg">Free</h3>
               <p className="font-serif text-4xl my-4">0 SOL</p>
               <ul className="text-sm text-haze space-y-2">
-                <li>20 messages</li>
-                <li>Self-writing persona file</li>
+                <li>20 messages, enforced server-side</li>
+                <li>Self-writing persona file, stored in Postgres</li>
                 <li>On-chain memory anchors</li>
+                <li>Concise answers</li>
               </ul>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -177,10 +180,11 @@ export default function Landing() {
               <p className="font-serif text-4xl my-4">0.05 SOL <span className="text-sm text-haze">devnet</span></p>
               <ul className="text-sm text-haze space-y-2">
                 <li>Unlimited messages</li>
-                <li>Unlimited memory rewrites</li>
-                <li>Payment settles on Solana in seconds — the mainnet version uses USDC the same way</li>
+                <li>Longer, deeper answers that lean on your memory file</li>
+                <li>Payment verified on-chain by the server before unlock</li>
+                <li>Mainnet path: USDC, same flow</li>
               </ul>
-              <a href="/chat" className="mt-6 inline-block px-6 py-2.5 rounded-full bg-ember text-ink font-semibold">Go Eternal</a>
+              <a href="/signup" className="mt-6 inline-block px-6 py-2.5 rounded-full bg-ember text-ink font-semibold">Go Eternal</a>
             </motion.div>
           </div>
         </div>
