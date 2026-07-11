@@ -11,6 +11,7 @@ import {
   explorerUrl,
   ETERNAL_PRICE_SOL
 } from "../../lib/solana";
+import GrantsPanel from "../components/GrantsPanel";
 
 const EXTRACT_EVERY = 4;
 
@@ -241,6 +242,8 @@ export default function ChatPage() {
             ))}
           </div>
         </section>
+
+        <GrantsPanel wallet={user?.wallet || wallet?.publicKey.toBase58()} />
         {status && <div className="text-xs text-haze">{status}</div>}
       </aside>
 

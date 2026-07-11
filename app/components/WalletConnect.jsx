@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { detectWallets, signLoginMessage } from "../../lib/wallets";
+import WalletIcon from "./WalletIcons";
 
 // Classic connect-wallet button + picker modal. Every listed wallet is
 // shown whether or not it is installed; installed ones connect and sign
@@ -83,22 +84,25 @@ export default function WalletConnect({ className = "" }) {
                   const w = byName.get(name);
                   return w ? (
                     <button key={name} onClick={() => connect(w)} disabled={!!busy}
-                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-moss/40 hover:bg-moss/10 disabled:opacity-50">
-                      <span className="text-sm font-semibold">{name}</span>
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-moss/40 hover:bg-moss/10 disabled:opacity-50">
+                      <WalletIcon name={name} />
+                      <span className="text-sm font-semibold flex-1 text-left">{name}</span>
                       <span className="text-[10px] text-moss">{busy === name ? "check your wallet…" : "detected"}</span>
                     </button>
                   ) : (
                     <a key={name} href={url} target="_blank" rel="noreferrer"
-                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/25">
-                      <span className="text-sm text-parchment/60">{name}</span>
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/25">
+                      <span className="opacity-50"><WalletIcon name={name} /></span>
+                      <span className="text-sm text-parchment/60 flex-1 text-left">{name}</span>
                       <span className="text-[10px] text-haze">not installed — get it</span>
                     </a>
                   );
                 })}
                 {extras.map((w) => (
                   <button key={w.name} onClick={() => connect(w)} disabled={!!busy}
-                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-moss/40 hover:bg-moss/10 disabled:opacity-50">
-                    <span className="text-sm font-semibold">{w.name}</span>
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-moss/40 hover:bg-moss/10 disabled:opacity-50">
+                    <WalletIcon name={w.name} />
+                    <span className="text-sm font-semibold flex-1 text-left">{w.name}</span>
                     <span className="text-[10px] text-moss">{busy === w.name ? "check your wallet…" : "detected"}</span>
                   </button>
                 ))}

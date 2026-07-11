@@ -37,5 +37,15 @@ await sql`CREATE TABLE IF NOT EXISTS anchors (
   kind TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 )`;
+await sql`CREATE TABLE IF NOT EXISTS grants (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id),
+  grant_key TEXT UNIQUE NOT NULL,
+  label TEXT,
+  revoked BOOLEAN NOT NULL DEFAULT false,
+  last_read_at TIMESTAMPTZ,
+  read_count INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+)`;
 const t = await sql`SELECT table_name FROM information_schema.tables WHERE table_schema='public'`;
 console.log("tables:", t.map((r) => r.table_name).join(", "));
