@@ -261,6 +261,22 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="py-24 border-t border-white/5">
+        <div className="max-w-4xl mx-auto px-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="mb-6 flex items-end justify-between flex-wrap gap-3">
+            <h2 className="font-serif text-3xl lg:text-4xl">See it in sixty seconds.</h2>
+            <span className="text-xs text-haze font-mono">Connect · chat · self-writing memory · on-chain · agent hand-off</span>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, scale: 0.97 }} whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }} transition={{ duration: 0.6 }}
+            className="rounded-2xl overflow-hidden border border-white/10 bg-black">
+            <video src="/everanima-demo.mp4" controls playsInline preload="metadata"
+              poster="" className="w-full aspect-video" />
+          </motion.div>
+        </div>
+      </section>
+
       <section className="py-28 border-t border-white/5">
         <div className="max-w-4xl mx-auto px-6">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
