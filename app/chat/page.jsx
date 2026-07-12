@@ -2,23 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  loadBurner,
-  getBalance,
-  requestAirdrop,
-  anchorPersona,
-  payEternal,
-  explorerUrl,
-  ETERNAL_PRICE_SOL
-} from "../../lib/solana";
+import { explorerUrl, ETERNAL_PRICE_SOL, buildEternalTransfer, getConnection } from "../../lib/solana";
+import { getStandardWallets, standardSendTransaction } from "../../lib/walletStandard";
 import GrantsPanel from "../components/GrantsPanel";
 
 const EXTRACT_EVERY = 4;
 
 export default function ChatPage() {
   const [user, setUser] = useState(undefined); // undefined = loading, null = signed out
-  const [wallet, setWallet] = useState(null);
-  const [balance, setBalance] = useState(null);
   const [messages, setMessages] = useState([]);
   const [persona, setPersona] = useState("");
   const [anchors, setAnchors] = useState([]);
@@ -26,7 +17,7 @@ export default function ChatPage() {
   const [busy, setBusy] = useState(false);
   const [memWriting, setMemWriting] = useState(false);
   const [status, setStatus] = useState("");
-  const [sigInput, setSigInput] = useState("");
+  const [paying, setPaying] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -42,9 +33,6 @@ export default function ChatPage() {
         setPersona(data.persona || "");
         setAnchors(data.anchors || []);
       });
-    const kp = loadBurner();
-    setWallet(kp);
-    getBalance(kp.publicKey).then(setBalance).catch(() => setBalance(0));
   }, []);
 
   useEffect(() => {
@@ -54,22 +42,6 @@ export default function ChatPage() {
   const eternal = user?.tier === "eternal";
   const remaining = user ? Math.max(0, user.freeLimit - user.msgCount) : 0;
   const locked = user && !eternal && remaining <= 0;
-
-  async function refreshBalance() {
-    if (!wallet) return;
-    try { setBalance(await getBalance(wallet.publicKey)); } catch {}
-  }
-
-  async function airdrop() {
-    setStatus("Requesting devnet SOL from the faucet…");
-    try {
-      await requestAirdrop(wallet.publicKey);
-      await refreshBalance();
-      setStatus("Faucet drop confirmed.");
-    } catch {
-      setStatus("Faucet is rate-limited. Use https://faucet.solana.com with your address.");
-    }
-  }
 
   async function verifyPayment(sig) {
     const res = await fetch("/api/eternal", {
@@ -87,15 +59,27 @@ export default function ChatPage() {
     }
   }
 
+  // Pays from the user's own wallet through the Wallet Standard. Their
+  // extension pops up and signs. We hold no key.
   async function goEternal() {
-    setStatus(`Sending ${ETERNAL_PRICE_SOL} SOL to the treasury…`);
+    setPaying(true);
+    setStatus("");
     try {
-      const sig = await payEternal(wallet);
+      const found = getStandardWallets();
+      if (found.length === 0) {
+        setStatus("Connect a Solana wallet first — install Phantom, Solflare, Backpack, or any Solana wallet, then reload.");
+        return;
+      }
+      const picked =
+        found.find((w) => user?.wallet && w.wallet.accounts?.[0]?.address === user.wallet) || found[0];
+      setStatus(`Approve ${ETERNAL_PRICE_SOL} SOL in ${picked.name}…`);
+      const sig = await standardSendTransaction(picked.wallet, buildEternalTransfer, getConnection());
       setStatus("Payment sent. Verifying on-chain…");
       await verifyPayment(sig);
-      await refreshBalance();
     } catch (e) {
-      setStatus("Payment failed — the burner wallet needs devnet SOL first. " + (e.message || ""));
+      setStatus("Payment could not complete: " + (e.message || e));
+    } finally {
+      setPaying(false);
     }
   }
 
@@ -106,17 +90,11 @@ export default function ChatPage() {
       const data = await res.json();
       if (data.persona) {
         setPersona(data.persona);
-        try {
-          const { sig, hash } = await anchorPersona(wallet, data.persona);
-          await fetch("/api/anchor", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sig, hash })
-          });
-          setAnchors((a) => [{ sig, hash, kind: "memory" }, ...a]);
-          setStatus("Memory rewritten and anchored on-chain.");
-        } catch {
-          setStatus("Memory rewritten. Anchor skipped — burner wallet has no devnet SOL for fees.");
+        if (data.anchor) {
+          setAnchors((a) => [data.anchor, ...a]);
+          setStatus("Memory rewritten and notarized on Solana devnet.");
+        } else {
+          setStatus("Memory rewritten.");
         }
       }
     } finally {
@@ -194,29 +172,27 @@ export default function ChatPage() {
         </section>
 
         <section className="rounded-xl border border-white/10 p-4 space-y-2">
-          <div className="text-xs uppercase tracking-widest text-haze">Devnet wallet (burner)</div>
-          <div className="font-mono text-xs break-all">{wallet?.publicKey.toBase58()}</div>
-          <div className="flex items-center justify-between text-sm">
-            <span>{balance === null ? "…" : balance.toFixed(4)} SOL</span>
-            <div className="flex gap-2">
-              <button onClick={airdrop} className="text-xs px-2 py-1 rounded border border-white/20 hover:border-ember">Faucet</button>
-              <button onClick={refreshBalance} className="text-xs px-2 py-1 rounded border border-white/20 hover:border-ember">Refresh</button>
-            </div>
+          <div className="flex items-center justify-between">
+            <div className="text-xs uppercase tracking-widest text-haze">Wallet</div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-moss/15 text-moss">SOLANA DEVNET</span>
           </div>
-          {!eternal && (
+          {user?.wallet ? (
             <>
-              <button onClick={goEternal} className="w-full text-sm py-2 rounded bg-ember text-ink font-semibold hover:opacity-90">
-                Go Eternal — {ETERNAL_PRICE_SOL} SOL (devnet)
-              </button>
-              <div className="flex gap-1">
-                <input value={sigInput} onChange={(e) => setSigInput(e.target.value)}
-                  placeholder="…or paste a payment tx signature"
-                  className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-[11px] outline-none" />
-                <button onClick={() => sigInput && verifyPayment(sigInput.trim())}
-                  className="text-xs px-2 rounded border border-white/20 hover:border-moss">Verify</button>
-              </div>
+              <div className="text-xs text-parchment/80">Signed in with your wallet</div>
+              <div className="font-mono text-[11px] break-all text-haze">{user.wallet}</div>
             </>
+          ) : (
+            <div className="text-xs text-haze">
+              You signed in with a password. To pay on-chain, approve from any Solana wallet when you go Eternal.
+            </div>
           )}
+          {!eternal && (
+            <button onClick={goEternal} disabled={paying}
+              className="w-full text-sm py-2 rounded bg-ember text-ink font-semibold hover:opacity-90 disabled:opacity-50">
+              {paying ? "Waiting for your wallet…" : `Go Eternal — ${ETERNAL_PRICE_SOL} SOL from your wallet`}
+            </button>
+          )}
+          {eternal && <div className="text-xs text-moss">Eternal tier active — verified on devnet.</div>}
         </section>
 
         <section className="rounded-xl border border-white/10 p-4 flex-1 min-h-[200px]">
@@ -231,9 +207,14 @@ export default function ChatPage() {
         </section>
 
         <section className="rounded-xl border border-white/10 p-4">
-          <div className="text-xs uppercase tracking-widest text-haze mb-2">On-chain anchors</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs uppercase tracking-widest text-haze">On-chain anchors</div>
+            {user?.wallet && (
+              <a href={`/verify?w=${user.wallet}`} className="text-[10px] text-moss hover:underline">verify →</a>
+            )}
+          </div>
           <div className="space-y-1 max-h-36 overflow-y-auto">
-            {anchors.length === 0 && <div className="text-xs text-haze">No anchors yet.</div>}
+            {anchors.length === 0 && <div className="text-xs text-haze">No anchors yet. They appear as Anima writes your memory.</div>}
             {anchors.map((a) => (
               <a key={a.sig} href={explorerUrl(a.sig)} target="_blank" rel="noreferrer"
                 className="block text-xs font-mono text-moss hover:underline truncate">
@@ -243,7 +224,7 @@ export default function ChatPage() {
           </div>
         </section>
 
-        <GrantsPanel wallet={user?.wallet || wallet?.publicKey.toBase58()} />
+        <GrantsPanel wallet={user?.wallet || ""} />
         {status && <div className="text-xs text-haze">{status}</div>}
       </aside>
 

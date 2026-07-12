@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Logo from "../components/Logo";
 
@@ -11,6 +11,12 @@ export default function Verify() {
   const [anchors, setAnchors] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+
+  useEffect(() => {
+    const w = new URLSearchParams(window.location.search).get("w");
+    if (w) { setWallet(w); check(w); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function check(addr) {
     const target = (addr || wallet).trim();

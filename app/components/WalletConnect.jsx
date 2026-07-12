@@ -2,46 +2,32 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { detectWallets, signLoginMessage } from "../../lib/wallets";
-import WalletIcon from "./WalletIcons";
+import { getStandardWallets, onWalletsChange, standardSignIn } from "../../lib/walletStandard";
 
-// Classic connect-wallet button + picker modal. Every listed wallet is
-// shown whether or not it is installed; installed ones connect and sign
-// in, missing ones link to their install page.
-const KNOWN = [
-  ["Phantom", "https://phantom.app/download"],
-  ["Solflare", "https://solflare.com/download"],
-  ["Backpack", "https://backpack.app/download"],
-  ["Glow", "https://glow.app"],
-  ["Trust", "https://trustwallet.com/download"],
-  ["Coinbase", "https://www.coinbase.com/wallet/downloads"],
-  ["OKX", "https://www.okx.com/web3"],
-  ["Bitget", "https://web3.bitget.com"],
-  ["Exodus", "https://www.exodus.com/download"],
-  ["Brave", "https://brave.com/wallet"]
-];
-
+// Classic connect-wallet button + picker. The list is built from the Wallet
+// Standard, so it shows the wallets actually installed in this browser, each
+// with the icon the wallet itself provides. No hard-coded brands, no invented
+// logos — if it is in the list, it is really on your machine.
 export default function WalletConnect({ className = "" }) {
   const [open, setOpen] = useState(false);
-  const [detected, setDetected] = useState([]);
+  const [wallets, setWallets] = useState([]);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
 
   useEffect(() => {
     if (!open) return;
-    setDetected(detectWallets());
-    const t = setTimeout(() => setDetected(detectWallets()), 600);
-    return () => clearTimeout(t);
+    const refresh = () => setWallets(getStandardWallets());
+    refresh();
+    const off = onWalletsChange(refresh);
+    const t = setTimeout(refresh, 600);
+    return () => { off(); clearTimeout(t); };
   }, [open]);
-
-  const byName = new Map(detected.map((w) => [w.name, w]));
-  const extras = detected.filter((w) => !KNOWN.some(([n]) => n === w.name));
 
   async function connect(w) {
     setBusy(w.name);
     setErr("");
     try {
-      const payload = await signLoginMessage(w.provider);
+      const payload = await standardSignIn(w.wallet, `everanima-login:${Date.now()}`);
       const res = await fetch("/api/auth/wallet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -77,31 +63,22 @@ export default function WalletConnect({ className = "" }) {
                 <button onClick={() => setOpen(false)} className="text-haze hover:text-parchment text-xl leading-none">×</button>
               </div>
               <p className="text-xs text-haze mb-4">
-                Any Solana wallet that can sign a message gets you in. Signing costs nothing and moves no funds.
+                Your installed Solana wallets, detected through the Wallet Standard. Signing costs nothing and moves no funds.
               </p>
               <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
-                {KNOWN.map(([name, url]) => {
-                  const w = byName.get(name);
-                  return w ? (
-                    <button key={name} onClick={() => connect(w)} disabled={!!busy}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-moss/40 hover:bg-moss/10 disabled:opacity-50">
-                      <WalletIcon name={name} />
-                      <span className="text-sm font-semibold flex-1 text-left">{name}</span>
-                      <span className="text-[10px] text-moss">{busy === name ? "check your wallet…" : "detected"}</span>
-                    </button>
-                  ) : (
-                    <a key={name} href={url} target="_blank" rel="noreferrer"
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/25">
-                      <span className="opacity-50"><WalletIcon name={name} /></span>
-                      <span className="text-sm text-parchment/60 flex-1 text-left">{name}</span>
-                      <span className="text-[10px] text-haze">not installed — get it</span>
-                    </a>
-                  );
-                })}
-                {extras.map((w) => (
+                {wallets.length === 0 && (
+                  <div className="text-xs text-haze text-center py-6 leading-relaxed">
+                    No Solana wallet found in this browser. Install any Solana wallet — Phantom, Solflare, Backpack, OKX, Coinbase, Glow, and others all work — then reopen this.
+                  </div>
+                )}
+                {wallets.map((w) => (
                   <button key={w.name} onClick={() => connect(w)} disabled={!!busy}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-moss/40 hover:bg-moss/10 disabled:opacity-50">
-                    <WalletIcon name={w.name} />
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-moss/40 hover:bg-moss/10 disabled:opacity-50">
+                    {w.icon ? (
+                      <img src={w.icon} alt="" width={24} height={24} className="rounded" />
+                    ) : (
+                      <span className="w-6 h-6 rounded bg-moss/40" />
+                    )}
                     <span className="text-sm font-semibold flex-1 text-left">{w.name}</span>
                     <span className="text-[10px] text-moss">{busy === w.name ? "check your wallet…" : "detected"}</span>
                   </button>
@@ -109,7 +86,7 @@ export default function WalletConnect({ className = "" }) {
               </div>
               {err && <p className="text-xs text-ember mt-3">{err}</p>}
               <p className="text-[11px] text-haze mt-4">
-                No extension on this device? <a href="/login" className="underline">Use the built-in key or a password instead.</a>
+                Prefer a password? <a href="/login" className="underline">Sign in without a wallet.</a>
               </p>
             </motion.div>
           </motion.div>
