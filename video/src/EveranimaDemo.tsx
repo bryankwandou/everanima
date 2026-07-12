@@ -196,7 +196,31 @@ const SceneProblem: React.FC = () => {
   );
 };
 
-const WalletChip: React.FC<{ name: string; color: string; delay: number }> = ({ name, color, delay }) => {
+// Simplified but recognizable wallet glyphs, drawn as SVG on the brand's
+// own signature color — no plain squares.
+const WalletGlyph: React.FC<{ name: string }> = ({ name }) => {
+  const box = (bg: string, child: React.ReactNode) => (
+    <div style={{ width: 46, height: 46, borderRadius: 13, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {child}
+    </div>
+  );
+  switch (name) {
+    case "Phantom":
+      return box("#ab9ff2", <svg width="28" height="28" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-18 0c0 .8 1 1 1.6 1H8a2 2 0 1 1 4 0 2 2 0 1 1 4 0h2.4c.6 0 1.6-.2 1.6-1Z" fill="#fff" /></svg>);
+    case "Solflare":
+      return box("#fc7227", <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.5 7H22l-6 4.5L18 21l-6-4-6 4 2-7.5L2 9h7.5L12 2z" /></svg>);
+    case "Backpack":
+      return box("#e33e3f", <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="5" y="7" width="14" height="13" rx="3" fill="#fff" /><path d="M9 7a3 3 0 0 1 6 0" stroke="#fff" strokeWidth="2" /></svg>);
+    case "Coinbase":
+      return box("#0052ff", <svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#fff" strokeWidth="2.5" /><rect x="9" y="9" width="6" height="6" rx="1" fill="#fff" /></svg>);
+    case "OKX":
+      return box("#111", <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><rect x="3" y="3" width="6" height="6" /><rect x="15" y="3" width="6" height="6" /><rect x="9" y="9" width="6" height="6" /><rect x="3" y="15" width="6" height="6" /><rect x="15" y="15" width="6" height="6" /></svg>);
+    default:
+      return box("#0500ff", <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M12 3l7 2v6c0 5-3 7.5-7 10-4-2.5-7-5-7-10V5l7-2z" /></svg>);
+  }
+};
+
+const WalletChip: React.FC<{ name: string; delay: number }> = ({ name, delay }) => {
   const e = useEnter(delay, 18);
   return (
     <div
@@ -208,36 +232,29 @@ const WalletChip: React.FC<{ name: string; color: string; delay: number }> = ({ 
         gap: 16,
         border: "1px solid rgba(255,255,255,0.12)",
         borderRadius: 16,
-        padding: "18px 26px",
+        padding: "16px 24px",
         background: "rgba(255,255,255,0.03)",
       }}
     >
-      <div style={{ width: 34, height: 34, borderRadius: 10, background: color }} />
-      <span style={{ fontFamily: SERIF, fontSize: 34, color: PARCHMENT }}>{name}</span>
+      <WalletGlyph name={name} />
+      <span style={{ fontFamily: SERIF, fontSize: 32, color: PARCHMENT }}>{name}</span>
     </div>
   );
 };
 
 const SceneWallet: React.FC = () => {
-  const wallets: [string, string][] = [
-    ["Phantom", "#ab9ff2"],
-    ["Solflare", "#fc7227"],
-    ["Backpack", "#e33e3f"],
-    ["Trust", "#0500ff"],
-    ["Coinbase", "#0052ff"],
-    ["OKX", "#111111"],
-  ];
+  const wallets = ["Phantom", "Solflare", "Backpack", "Trust", "Coinbase", "OKX"];
   return (
     <AbsoluteFill style={{ background: INK, justifyContent: "center", paddingLeft: 180 }}>
       <Glow color={MOSS} x="55%" y="10%" />
-      <Kicker>Sign in with any Solana wallet</Kicker>
+      <Kicker>Sign in with your own Solana wallet</Kicker>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 22, width: 1180 }}>
-        {wallets.map(([n, c], i) => (
-          <WalletChip key={n} name={n} color={c} delay={18 + i * 12} />
+        {wallets.map((n, i) => (
+          <WalletChip key={n} name={n} delay={18 + i * 12} />
         ))}
       </div>
       <div style={{ ...useEnter(120), fontFamily: MONO, fontSize: 26, color: HAZE, marginTop: 44 }}>
-        One signature. No funds moved. The server verifies it, not the brand.
+        Detected through the Wallet Standard. One signature, no funds moved.
       </div>
     </AbsoluteFill>
   );

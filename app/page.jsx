@@ -346,7 +346,7 @@ export default function Landing() {
             {[
               ["01", "You talk", "Anima answers with your full persona in view, so quality never hangs on how long the chat has run."],
               ["02", "It writes", "Every few messages the AI rewrites persona.md on its own: identity, preferences, open threads. Plain markdown, every word readable."],
-              ["03", "It anchors", "Each version is hashed and committed to Solana through the Memo program, signed by your key. The file becomes an asset with a paper trail."],
+              ["03", "You seal it", "Hash any version and your own wallet signs it onto Solana through the Memo program. No custodial key, no burner — your signature, your paper trail."],
               ["04", "It travels", "Because the file belongs to your wallet, any agent you authorize can read it. Leave us, keep the memory. That part is the point."]
             ].map(([num, step, body], i) => (
               <motion.div key={num} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
@@ -376,7 +376,7 @@ export default function Landing() {
               <ul className="text-sm text-haze space-y-2">
                 <li>20 messages, counted by the server</li>
                 <li>A persona file the AI keeps for you</li>
-                <li>Every version anchored on-chain</li>
+                <li>Seal any version on-chain with your wallet</li>
                 <li>Short, focused answers</li>
               </ul>
             </motion.div>

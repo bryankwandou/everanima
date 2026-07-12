@@ -2,8 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { explorerUrl, ETERNAL_PRICE_SOL, buildEternalTransfer, getConnection } from "../../lib/solana";
-import { getStandardWallets, standardSendTransaction } from "../../lib/walletStandard";
+import {
+  explorerUrl,
+  ETERNAL_PRICE_SOL,
+  buildEternalTransfer,
+  buildAnchorMemo,
+  sha256hex,
+  faucetUrl,
+  getConnection
+} from "../../lib/solana";
+import { getStandardWallets, onWalletsChange, standardSendTransaction } from "../../lib/walletStandard";
 import GrantsPanel from "../components/GrantsPanel";
 
 const EXTRACT_EVERY = 4;
@@ -18,6 +26,8 @@ export default function ChatPage() {
   const [memWriting, setMemWriting] = useState(false);
   const [status, setStatus] = useState("");
   const [paying, setPaying] = useState(false);
+  const [sealing, setSealing] = useState(false);
+  const [wallets, setWallets] = useState([]);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -34,6 +44,25 @@ export default function ChatPage() {
         setAnchors(data.anchors || []);
       });
   }, []);
+
+  // Detect the wallets installed in this browser, so seal/pay can use the
+  // user's own wallet. Nothing is stored; this just reads what is present.
+  useEffect(() => {
+    const refresh = () => setWallets(getStandardWallets());
+    refresh();
+    const off = onWalletsChange(refresh);
+    const t = setTimeout(refresh, 700);
+    return () => { off(); clearTimeout(t); };
+  }, []);
+
+  // Prefer the wallet the user signed in with; fall back to any Solana wallet.
+  function pickWallet() {
+    if (wallets.length === 0) return null;
+    return (
+      wallets.find((w) => user?.wallet && w.wallet.accounts?.[0]?.address === user.wallet) ||
+      wallets[0]
+    );
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -65,13 +94,11 @@ export default function ChatPage() {
     setPaying(true);
     setStatus("");
     try {
-      const found = getStandardWallets();
-      if (found.length === 0) {
-        setStatus("Connect a Solana wallet first — install Phantom, Solflare, Backpack, or any Solana wallet, then reload.");
+      const picked = pickWallet();
+      if (!picked) {
+        setStatus("No Solana wallet found in this browser. Install Phantom, Solflare, or Backpack, then reload.");
         return;
       }
-      const picked =
-        found.find((w) => user?.wallet && w.wallet.accounts?.[0]?.address === user.wallet) || found[0];
       setStatus(`Approve ${ETERNAL_PRICE_SOL} SOL in ${picked.name}…`);
       const sig = await standardSendTransaction(picked.wallet, buildEternalTransfer, getConnection());
       setStatus("Payment sent. Verifying on-chain…");
@@ -83,20 +110,44 @@ export default function ChatPage() {
     }
   }
 
+  // Seals the current persona version on devnet with the user's OWN wallet.
+  // Their wallet signs a Memo carrying the SHA-256; no server key exists.
+  async function sealOnChain() {
+    if (!persona.trim()) { setStatus("Nothing to seal yet — talk to Anima first."); return; }
+    setSealing(true);
+    setStatus("");
+    try {
+      const picked = pickWallet();
+      if (!picked) {
+        setStatus("Seal on-chain needs a Solana wallet. Install Phantom, Solflare, or Backpack, then reload.");
+        return;
+      }
+      const hash = await sha256hex(persona);
+      setStatus(`Approve the anchor in ${picked.name}…`);
+      const sig = await standardSendTransaction(picked.wallet, buildAnchorMemo(hash), getConnection());
+      await fetch("/api/anchor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sig, hash })
+      });
+      setAnchors((a) => [{ sig, hash, kind: "memory" }, ...a]);
+      setStatus("Sealed on Solana devnet — signed by your wallet.");
+    } catch (e) {
+      const m = (e.message || String(e));
+      setStatus(m.includes("insufficient") || m.toLowerCase().includes("0.")
+        ? "Your wallet needs a little devnet SOL for the fee. Grab some from the faucet, then seal again."
+        : "Could not seal: " + m);
+    } finally {
+      setSealing(false);
+    }
+  }
+
   async function rewriteMemory() {
     setMemWriting(true);
     try {
       const res = await fetch("/api/memory", { method: "POST" });
       const data = await res.json();
-      if (data.persona) {
-        setPersona(data.persona);
-        if (data.anchor) {
-          setAnchors((a) => [data.anchor, ...a]);
-          setStatus("Memory rewritten and notarized on Solana devnet.");
-        } else {
-          setStatus("Memory rewritten.");
-        }
-      }
+      if (data.persona) setPersona(data.persona);
     } finally {
       setMemWriting(false);
     }
@@ -183,7 +234,7 @@ export default function ChatPage() {
             </>
           ) : (
             <div className="text-xs text-haze">
-              You signed in with a password. To pay on-chain, approve from any Solana wallet when you go Eternal.
+              You signed in with a password. Approve on-chain actions from any Solana wallet in this browser.
             </div>
           )}
           {!eternal && (
@@ -193,6 +244,10 @@ export default function ChatPage() {
             </button>
           )}
           {eternal && <div className="text-xs text-moss">Eternal tier active — verified on devnet.</div>}
+          <a href={faucetUrl(user?.wallet)} target="_blank" rel="noreferrer"
+            className="block text-[11px] text-haze hover:text-moss">
+            Need devnet SOL for fees? Open the faucet →
+          </a>
         </section>
 
         <section className="rounded-xl border border-white/10 p-4 flex-1 min-h-[200px]">
@@ -202,19 +257,23 @@ export default function ChatPage() {
           </div>
           <motion.pre key={persona.length} initial={{ opacity: 0.4 }} animate={{ opacity: 1 }}
             className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-parchment/80">
-            {persona || "The file is empty. Talk to Anima — it writes this itself, then anchors each version to Solana devnet. Stored in Postgres, tied to your account."}
+            {persona || "The file is empty. Talk to Anima — it writes this itself and saves it to your account. Seal any version to Solana devnet with your own wallet."}
           </motion.pre>
         </section>
 
-        <section className="rounded-xl border border-white/10 p-4">
-          <div className="flex items-center justify-between mb-2">
+        <section className="rounded-xl border border-white/10 p-4 space-y-2">
+          <div className="flex items-center justify-between">
             <div className="text-xs uppercase tracking-widest text-haze">On-chain anchors</div>
             {user?.wallet && (
               <a href={`/verify?w=${user.wallet}`} className="text-[10px] text-moss hover:underline">verify →</a>
             )}
           </div>
-          <div className="space-y-1 max-h-36 overflow-y-auto">
-            {anchors.length === 0 && <div className="text-xs text-haze">No anchors yet. They appear as Anima writes your memory.</div>}
+          <button onClick={sealOnChain} disabled={sealing || !persona.trim()}
+            className="w-full text-sm py-2 rounded border border-moss/50 text-moss font-semibold hover:bg-moss/10 disabled:opacity-40">
+            {sealing ? "Waiting for your wallet…" : "Seal this version on-chain"}
+          </button>
+          <div className="space-y-1 max-h-32 overflow-y-auto">
+            {anchors.length === 0 && <div className="text-xs text-haze">No anchors yet. Seal a version and your wallet signs it onto devnet.</div>}
             {anchors.map((a) => (
               <a key={a.sig} href={explorerUrl(a.sig)} target="_blank" rel="noreferrer"
                 className="block text-xs font-mono text-moss hover:underline truncate">

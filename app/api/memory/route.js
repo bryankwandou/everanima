@@ -1,5 +1,4 @@
 import { sql, currentUser } from "../../../lib/server";
-import { anchorPersonaOnChain } from "../../../lib/anchorServer";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MODEL = "llama-3.3-70b-versatile";
@@ -67,19 +66,8 @@ export async function POST(req) {
     INSERT INTO personas (user_id, content, updated_at) VALUES (${user.id}, ${next}, now())
     ON CONFLICT (user_id) DO UPDATE SET content = ${next}, updated_at = now()`;
 
-  // Notarize this version on devnet, server-side. No user key in the browser.
-  let anchor = null;
-  try {
-    const res2 = await anchorPersonaOnChain(user.wallet_pubkey, next);
-    if (res2) {
-      await sql`
-        INSERT INTO anchors (user_id, sig, hash, kind) VALUES (${user.id}, ${res2.sig}, ${res2.hash}, 'memory')
-        ON CONFLICT (sig) DO NOTHING`;
-      anchor = { sig: res2.sig, hash: res2.hash, kind: "memory" };
-    }
-  } catch (e) {
-    /* anchoring is best-effort; the persona is already saved */
-  }
-
-  return Response.json({ persona: next, anchor });
+  // The persona lives in Postgres. Anchoring to devnet is a deliberate,
+  // user-signed action from the browser (see /api/anchor) — the user's own
+  // wallet seals the version. The server never holds a signing key.
+  return Response.json({ persona: next });
 }
