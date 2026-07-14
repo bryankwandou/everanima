@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Logo from "../components/Logo";
 
-const TREASURY = "5JTDJdfDHqu3TEHuBTATJF49G8i8YKy42riJG9KWFfSk";
+// A wallet with real sealed memories on devnet — lets anyone see a live
+// example without needing an account first.
+const EXAMPLE_WALLET = "35z7X59rtyts557Up1RAwpyYN7x2cFqcDc7RjPuNxFzr";
 
 export default function Verify() {
   const [wallet, setWallet] = useState("");
@@ -62,9 +64,9 @@ export default function Verify() {
             {busy ? "Reading devnet…" : "Verify"}
           </button>
         </div>
-        <button onClick={() => { setWallet(TREASURY); check(TREASURY); }}
+        <button onClick={() => { setWallet(EXAMPLE_WALLET); check(EXAMPLE_WALLET); }}
           className="text-xs text-moss hover:underline mb-8">
-          Try it with the Everanima treasury wallet
+          Show me a wallet with sealed memories on devnet
         </button>
 
         {err && <p className="text-sm text-ember mb-6">{err}</p>}

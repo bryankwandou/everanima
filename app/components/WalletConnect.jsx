@@ -63,7 +63,7 @@ export default function WalletConnect({ className = "" }) {
                 <button onClick={() => setOpen(false)} className="text-haze hover:text-parchment text-xl leading-none">×</button>
               </div>
               <p className="text-xs text-haze mb-4">
-                Your installed Solana wallets, detected through the Wallet Standard. Signing costs nothing and moves no funds.
+                These are the wallets installed in <span className="text-parchment">this browser</span>, detected live through the Wallet Standard — the same protocol every Solana app relies on. Install any of the 100+ Solana wallets and it appears here by itself. Signing costs nothing and moves no funds.
               </p>
               <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
                 {wallets.length === 0 && (

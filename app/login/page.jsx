@@ -93,6 +93,11 @@ export default function Login() {
 
         <div id="wallet" className="mt-6 space-y-3">
           <div className="text-xs uppercase tracking-widest text-haze text-center">or sign in with your wallet</div>
+          {wallets.length > 0 && (
+            <p className="text-[11px] text-haze text-center leading-relaxed">
+              Found {wallets.length} wallet{wallets.length === 1 ? "" : "s"} installed in this browser, detected live through the Wallet Standard. Any of the 100+ Solana wallets appears here on its own — nothing is hand-picked.
+            </p>
+          )}
           {wallets.length > 0 ? (
             <div className="space-y-2">
               {wallets.map((w) => (
