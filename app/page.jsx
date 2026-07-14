@@ -199,7 +199,9 @@ export default function Landing() {
             <a href="#why" className="text-haze hover:text-parchment hidden sm:block">Why not ChatGPT</a>
             <a href="#how" className="text-haze hover:text-parchment hidden sm:block">How it works</a>
             <a href="#pricing" className="text-haze hover:text-parchment hidden sm:block">Pricing</a>
+            <a href="/portability" className="text-haze hover:text-parchment hidden lg:block">Take it with you</a>
             <a href="/verify" className="text-haze hover:text-parchment hidden sm:block">Verify</a>
+            <a href="/pitch" className="text-haze hover:text-parchment hidden lg:block">Deck</a>
             <a href="/demo" className="text-haze hover:text-parchment">Demo</a>
             <a href="/login" className="text-haze hover:text-parchment">Sign in</a>
             <WalletConnect />

@@ -259,6 +259,17 @@ export default function ChatPage() {
             className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-parchment/80">
             {persona || "The file is empty. Talk to Anima — it writes this itself and saves it to your account. Seal any version to Solana devnet with your own wallet."}
           </motion.pre>
+          {persona.trim() && (
+            <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between gap-2">
+              <a href="/api/persona/export" download
+                className="text-xs px-3 py-1.5 rounded border border-white/20 hover:border-moss hover:text-moss font-semibold">
+                Download persona.md
+              </a>
+              <a href="/portability" className="text-[10px] text-haze hover:text-moss">
+                how to import it elsewhere →
+              </a>
+            </div>
+          )}
         </section>
 
         <section className="rounded-xl border border-white/10 p-4 space-y-2">

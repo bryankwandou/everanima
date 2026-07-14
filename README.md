@@ -28,6 +28,9 @@ Live: **https://everanima.vercel.app** · Runs on Solana devnet.
 ## Prove it yourself
 
 - **`/verify`** — paste any wallet; the page reads its Everanima anchors straight from devnet RPC (hash + explorer links). No account, no trust in us required.
+- **`/portability`** — the full exit-door tutorial: how an ordinary chat fills the file, how to download persona.md, and how to import it into ChatGPT, Claude, or any agent.
+- **`/pitch`** — the submission deck, live inside the product (keyboard navigation, print to PDF).
+- **Export** — `GET /api/persona/export` (signed in) downloads persona.md as a real markdown file.
 - **Agent access API** — `GET /api/persona/:wallet` with header `x-everanima-grant: <key>` returns the persona; without a valid key it returns 401/403.
 
 ## Demo vs real, separated
