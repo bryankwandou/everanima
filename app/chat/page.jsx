@@ -250,15 +250,17 @@ export default function ChatPage() {
           </a>
         </section>
 
-        <section className="rounded-xl border border-white/10 p-4 flex-1 min-h-[200px]">
+        <section className="rounded-xl border border-white/10 p-4 flex-1 min-h-[200px] flex flex-col overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs uppercase tracking-widest text-haze">persona.md</div>
             {memWriting && <span className="text-xs text-ember cursorline">writing…</span>}
           </div>
-          <motion.pre key={persona.length} initial={{ opacity: 0.4 }} animate={{ opacity: 1 }}
-            className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-parchment/80">
-            {persona || "The file is empty. Talk to Anima — it writes this itself and saves it to your account. Seal any version to Solana devnet with your own wallet."}
-          </motion.pre>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <motion.pre key={persona.length} initial={{ opacity: 0.4 }} animate={{ opacity: 1 }}
+              className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-parchment/80">
+              {persona || "The file is empty. Talk to Anima — it writes this itself and saves it to your account. Seal any version to Solana devnet with your own wallet."}
+            </motion.pre>
+          </div>
           {persona.trim() && (
             <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between gap-2">
               <a href="/api/persona/export" download
